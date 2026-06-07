@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>廠商基本資料調查表</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Noto+Serif+TC:wght@400;600&display=swap');
+
+  :root {
+    --primary: #1a3a5c;
+    --primary-light: #2a5a8c;
+    --accent: #d4882a;
+    --accent-light: #f0a840;
+    --bg: #f5f4f0;
+    --card: #ffffff;
+    --border: #d8d4cc;
+    --text: #1c1c1c;
+    --text-muted: #6b6560;
+    --success: #2d7a4f;
+    --section-bg: #eef2f7;
+    --required: #c0392b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .site-header {
+    background: var(--primary);
+    color: white;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .header-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+  }
+  .header-sub {
+    font-size: 0.72rem;
+    opacity: 0.7;
+    margin-top: 2px;
+    font-weight: 300;
+  }
+  .header-badge {
+    background: var(--accent);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Progress Bar ── */
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.15);
+    height: 3px;
+  }
+  .progress-bar {
+    height: 3px;
+    background: var(--accent-light);
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* ── Steps Nav ── */
+  .steps-nav {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .steps-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 16px;
+    display: flex;
+    gap: 0;
+  }
+  .step-tab {
+    flex: 0 0 auto;
+    padding: 12px 16px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .step-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 700;
+  }
+  .step-tab.done {
+    color: var(--success);
+  }
+  .step-tab .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── Main ── */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+  }
+
+  /* ── Section Card ── */
+  .section-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    display: none;
+  }
+  .section-card.active { display: block; }
+  .section-header {
+    background: var(--primary);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-icon {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  .section-desc {
+    font-size: 0.7rem;
+    opacity: 0.75;
+    margin-top: 2px;
+  }
+  .section-body { padding: 20px; }
+
+  /* ── Form Grid ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .form-grid.single { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--primary);
+    letter-spacing: 0.02em;
+  }
+  label .req { color: var(--required); margin-left: 3px; }
+  label .hint {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    margin-left: 4px;
+  }
+
+  input[type="text"], input[type="email"], input[type="tel"],
+  input[type="number"], select, textarea {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.85rem;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: #fafafa;
+    color: var(--text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(42,90,140,0.1);
+    background: white;
+  }
+  select { cursor: pointer; }
+  input.error, select.error { border-color: var(--required); }
+
+  /* ── Subsection ── */
+  .subsection {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .subsection-header {
+    background: var(--section-bg);
+    padding: 8px 14px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+  }
+  .subsection-body { padding: 14px; }
+
+  /* ── Fuel Block ── */
+  .fuel-block {
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .fuel-block-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+
+  /* ── Operating Hours ── */
+  .hours-grid {
+    display: grid;
+    gap: 8px;
+  }
+  .hours-row {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #fafafa;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+  }
+  .day-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-align: center;
+  }
+  .hours-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .radio-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .radio-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    font-size: 0.73rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 4px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .radio-pill input[type="radio"] { width: auto; padding: 0; border: none; margin: 0; accent-color: var(--primary); }
+  .radio-pill:has(input:checked) {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .time-range {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+  }
+  .time-range input {
+    width: 76px;
+    padding: 5px 8px;
+    font-size: 0.78rem;
+    text-align: center;
+  }
+  .time-sep { color: var(--text-muted); font-weight: 600; }
+
+  /* ── Navigation ── */
+  .nav-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    z-index: 99;
+  }
+  .nav-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .nav-step-info {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .nav-step-info strong { color: var(--primary); }
+  .btn {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn-outline {
+    background: white;
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+  }
+  .btn-outline:hover { background: var(--section-bg); }
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--primary-light); }
+  .btn-accent {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-accent:hover { background: var(--accent-light); }
+  .btn-submit {
+    background: #1a6e3c;
+    color: white;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn-submit:hover { background: #2d7a4f; }
+  .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Review ── */
+  .review-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  .review-table th {
+    background: var(--section-bg);
+    color: var(--primary);
+    font-weight: 600;
+    padding: 8px 12px;
+    text-align: left;
+    border: 1px solid var(--border);
+    width: 38%;
+  }
+  .review-table td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    word-break: break-all;
+  }
+  .review-table tr:nth-child(even) td { background: #fafafa; }
+  .review-section-title {
+    background: var(--primary);
+    color: white;
+    padding: 7px 12px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Lookup Button & Status ── */
+  .taxid-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .taxid-row input { flex: 1; }
+  .btn-lookup {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 9px 14px;
+    border-radius: 6px;
+    border: 1.5px solid var(--accent);
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-lookup:hover { background: var(--accent-light); border-color: var(--accent-light); }
+  .btn-lookup:disabled { opacity: 0.5; cursor: not-allowed; }
+  .lookup-status {
+    font-size: 0.73rem;
+    padding: 6px 10px;
+    border-radius: 5px;
+    margin-top: 4px;
+    display: none;
+  }
+  .lookup-status.loading { display: block; background: #eef2f7; color: var(--primary); }
+  .lookup-status.success { display: block; background: #e8f5ee; color: var(--success); }
+  .lookup-status.error   { display: block; background: #fdf0ee; color: var(--required); }
+  .lookup-status.warn    { display: block; background: #fdf6e3; color: #b07800; }
+
+  /* ── Business Items Display ── */
+  .biz-items-box {
+    background: var(--section-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.76rem;
+    color: var(--text);
+    line-height: 1.7;
+    max-height: 120px;
+    overflow-y: auto;
+    display: none;
+  }
+  .biz-items-box.show { display: block; }
+  .biz-item-tag {
+    display: inline-block;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 7px;
+    margin: 2px 3px 2px 0;
+    font-size: 0.7rem;
+    color: var(--primary);
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--success);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid .form-group.full { grid-column: 1; }
+    .header-inner { flex-wrap: wrap; }
+    .hours-row { grid-template-columns: 48px 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="header-inner">
+    <div>
+      <div class="header-title">廠商基本資料調查表</div>
+      <div class="header-sub">中衛發展中心 · 南區服務處</div>
+    </div>
+    <div class="header-badge">現場輔導版</div>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+</header>
+
+<!-- Steps Nav -->
+<nav class="steps-nav">
+  <div class="steps-inner" id="stepsNav"></div>
+</nav>
+
+<!-- Main Content -->
+<main class="main" id="mainContent"></main>
+
+<!-- Bottom Nav -->
+<div class="nav-bar">
+  <div class="nav-inner">
+    <div class="nav-step-info" id="stepInfo"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-outline" id="btnPrev" onclick="prevStep()">← 上一步</button>
+      <button class="btn btn-primary" id="btnNext" onclick="nextStep()">下一步 →</button>
+      <button class="btn btn-accent" id="btnExport" onclick="exportExcel()" style="display:none">⬇ 匯出 Excel</button>
+      <button class="btn btn-submit" id="btnSubmit" onclick="submitToSheets()" style="display:none">☁ 送出集中</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA DEFINITIONS
+// ═══════════════════════════════════════════════
+
+const INDUSTRY_MAJOR = [
+  { code: 'A', name: 'A-農、林、漁、牧業' },
+  { code: 'B', name: 'B-礦業及土石採取業' },
+  { code: 'C', name: 'C-製造業' },
+  { code: 'D', name: 'D-電力及燃氣供應業' },
+  { code: 'E', name: 'E-用水供應及污染整治業' },
+  { code: 'F', name: 'F-營建工程業' },
+  { code: 'G', name: 'G-批發及零售業' },
+  { code: 'H', name: 'H-運輸及倉儲業' },
+  { code: 'I', name: 'I-住宿及餐飲業' },
+  { code: 'J', name: 'J-出版、影音製作、傳播及資通訊服務業' },
+  { code: 'K', name: 'K-金融及保險業' },
+  { code: 'L', name: 'L-不動產業' },
+  { code: 'M', name: 'M-專業、科學及技術服務業' },
+  { code: 'N', name: 'N-支援服務業' },
+  { code: 'O', name: 'O-公共行政及國防；強制性社會安全' },
+  { code: 'P', name: 'P-教育業' },
+  { code: 'Q', name: 'Q-醫療保健及社會工作服務業' },
+  { code: 'R', name: 'R-藝術、娛樂及休閒服務業' },
+  { code: 'S', name: 'S-其他服務業' },
+];
+
+const INDUSTRY_MINOR = {
+  'A': [
+    { code: '01', name: '01-農業' }, { code: '02', name: '02-林業' },
+    { code: '03', name: '03-漁業' }, { code: '04', name: '04-牧業' },
+  ],
+  'B': [
+    { code: '05', name: '05-煤炭及褐煤礦採取業' }, { code: '06', name: '06-石油及天然氣採取業' },
+    { code: '07', name: '07-金屬礦採取業' }, { code: '08', name: '08-其他礦採取業' },
+    { code: '09', name: '09-土石採取業' },
+  ],
+  'C': [
+    { code: '08', name: '08-食品製造業' }, { code: '09', name: '09-飲料製造業' },
+    { code: '10', name: '10-菸草製造業' }, { code: '11', name: '11-紡織業' },
+    { code: '12', name: '12-成衣及服飾品製造業' }, { code: '13', name: '13-皮革、毛皮及其製品製造業' },
+    { code: '14', name: '14-木竹製品製造業' }, { code: '15', name: '15-紙漿、紙及紙製品製造業' },
+    { code: '16', name: '16-印刷及資料儲存媒體複製業' }, { code: '17', name: '17-石油及煤製品製造業' },
+    { code: '18', name: '18-化學材料及肥料製造業' }, { code: '19', name: '19-其他化學製品製造業' },
+    { code: '20', name: '20-藥品及醫用化學製品製造業' }, { code: '21', name: '21-橡膠製品製造業' },
+    { code: '22', name: '22-塑膠製品製造業' }, { code: '23', name: '23-非金屬礦物製品製造業' },
+    { code: '24', name: '24-基本金屬製造業' }, { code: '25', name: '25-金屬製品製造業' },
+    { code: '26', name: '26-電子零組件製造業' }, { code: '27', name: '27-電腦、電子產品及光學製品製造業' },
+    { code: '28', name: '28-電力設備及配備製造業' }, { code: '29', name: '29-機械設備製造業' },
+    { code: '30', name: '30-汽車及其零件製造業' }, { code: '31', name: '31-其他運輸工具及其零件製造業' },
+    { code: '32', name: '32-家具製造業' }, { code: '33', name: '33-其他製造業' },
+    { code: '34', name: '34-產業用機械設備維修及安裝業' },
+  ],
+  'G': [
+    { code: '45', name: '45-批發業' }, { code: '46', name: '46-零售業' },
+  ],
+  'H': [
+    { code: '49', name: '49-陸上運輸業' }, { code: '50', name: '50-水上運輸業' },
+    { code: '51', name: '51-航空運輸業' }, { code: '52', name: '52-運輸輔助業' },
+    { code: '53', name: '53-郵政及快遞業' },
+  ],
+  'I': [
+    { code: '55', name: '55-住宿業' }, { code: '56', name: '56-餐飲業' },
+  ],
+  'Q': [
+    { code: '86', name: '86-醫療保健業' }, { code: '87', name: '87-居住型照顧服務業' },
+    { code: '88', name: '88-其他社會工作服務業' },
+  ],
+};
+
+const BUILDING_USES = [
+  '一般事務所', '商業辦公室', '金融機構', '醫療院所', '旅館/飯店',
+  '百貨公司/購物中心', '量販店/超市', '餐廳/餐飲業', '學校/教育機構',
+  '政府機關', '工廠/廠房', '倉儲設施', '住宿服務', '文化展演設施',
+  '運動休閒設施', '其他',
+];
+
+const FUEL_TYPES = [
+  '天然氣（CNS）', '液化石油氣（LPG）', '柴油', '汽油', '燃料油',
+  '煤炭', '焦炭', '木材/生質燃料', '酒精（乙醇）', '氫氣', '其他',
+];
+
+const DAYS = ['週一','週二','週三','週四','週五','週六','週日'];
+
+// ═══════════════════════════════════════════════
+//  STEPS CONFIG
+// ═══════════════════════════════════════════════
+const STEPS = [
+  { id: 'basic',    label: '基本資料',  icon: '🏭' },
+  { id: 'energy',   label: '能源用量',  icon: '⚡' },
+  { id: 'contact',  label: '聯絡資訊',  icon: '👤' },
+  { id: 'hours',    label: '營業時間',  icon: '🕐' },
+  { id: 'review',   label: '確認送出',  icon: '✅' },
+];
+
+let currentStep = 0;
+
+// ═══════════════════════════════════════════════
+//  FORM DATA
+// ═══════════════════════════════════════════════
+let formData = {};
+
+// ═══════════════════════════════════════════════
+//  RENDER ENGINE
+// ═══════════════════════════════════════════════
+function renderStepsNav() {
+  const nav = document.getElementById('stepsNav');
+  nav.innerHTML = STEPS.map((s, i) => `
+    <div class="step-tab ${i === currentStep ? 'active' : (i < currentStep ? 'done' : '')}" 
+         onclick="goToStep(${i})">
+      <span class="dot"></span>${s.label}
+    </div>`).join('');
+}
+
+function renderProgress() {
+  const pct = ((currentStep) / (STEPS.length - 1)) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function renderStepInfo() {
+  document.getElementById('stepInfo').innerHTML =
+    `步驟 <strong>${currentStep + 1}</strong> / ${STEPS.length}`;
+  document.getElementById('btnPrev').disabled = currentStep === 0;
+  document.getElementById('btnNext').style.display = currentStep < STEPS.length - 1 ? '' : 'none';
+  const isLast = currentStep === STEPS.length - 1;
+  document.getElementById('btnExport').style.display = isLast ? '' : 'none';
+  document.getElementById('btnSubmit').style.display = isLast ? '' : 'none';
+}
+
+function renderAll() {
+  renderStepsNav();
+  renderProgress();
+  renderStepInfo();
+  renderCurrentStep();
+}
+
+function renderCurrentStep() {
+  const main = document.getElementById('mainContent');
+  const stepId = STEPS[currentStep].id;
+  const renderers = { basic: renderBasic, energy: renderEnergy, contact: renderContact, hours: renderHours, review: renderReview };
+  main.innerHTML = '';
+  renderers[stepId]();
+  restoreValues();
+}
+
+// ═══════════════════════════════════════════════
+//  STEP 1 – BASIC INFO
+// ═══════════════════════════════════════════════
+function renderBasic() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+  <div class="section-card active">
+    <div class="section-header">
+      <div class="section-icon">🏭</div>
+      <div><div class="section-title">受訪廠商基本資料</div><div class="section-desc">輸入統編後點擊「查詢」可自動帶入公司名稱、地址與營業項目</div></div>
+    </div>
+    <div class="section-body">
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>用戶統一編號<span class="req">*</span></label>
+          <div class="taxid-row">
+            <input type="text" id="f_taxid" placeholder="8碼統一編號" maxlength="8"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+              onkeydown="if(event.key==='Enter'){lookupTaxId();}">
+            <button class="btn-lookup" id="btnLookup" onclick="lookupTaxId()">🔍 查詢</button>
+          </div>
+          <div class="lookup-status" id="lookupStatus"></div>
+        </div>
+
+        <div class="form-group">
+          <label>用戶抬頭（廠商全名）<span class="req">*</span></label>
+          <input type="text" id="f_name" placeholder="查詢後自動帶入，或手動輸入">
+        </div>
+
+        <div class="form-group full">
+          <label>登記營業項目 <span class="hint">（查詢後自動帶入）</span></label>
+          <div class="biz-items-box" id="bizItemsBox"></div>
+          <input type="text" id="f_biz_items_text" style="display:none">
+        </div>
+
+        <div class="form-group">
+          <label>行業別大類代碼-名稱 <span class="hint">（註1）</span></label>
+          <select id="f_ind_major" onchange="updateMinor()">
+            <option value="">— 請選擇大類 —</option>
+            ${INDUSTRY_MAJOR.map(i => `<option value="${i.code}">${i.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>行業別中類代碼-名稱 <span class="hint">（註1）</span></label>
+          <select id="f_ind_minor">
+            <option value="">— 請先選大類 —</option>
+          </select>
+        </div>
+
+        <div class="form-group full">
+          <label>建築物地址<span class="req">*</span></label>
+          <input type="text" id="f_address" placeholder="查詢後自動帶入，或手動輸入">
+        </div>
+        <div class="form-group">
+          <label>建築物用途 <span class="hint">（註2）</span></label>
+          <select id="f_building_use">
+            <option value="">— 請選擇 —</option>
+            ${BUILDING_USES.map(u => `<option value="${u}">${u}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>樓地板面積（m²）</label>
+          <input type="number" id="f_floor_area" placeholder="例：500" min="0">
+        </div>
+        <div class="form-group">
+          <label>年營運時數（小時）</label>
+          <input type="number" id="f_op_hours" placeholder="例：2920" min="0" max="8760">
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  TAX ID LOOKUP via company.g0v.ronny.tw
+//  資料來源：經濟部商業司（開放 CORS，可直接從瀏覽器呼叫）
+// ═══════════════════════════════════════════════
+async function lookupTaxId() {
+  const taxid = document.getElementById('f_taxid')?.value.trim();
+  const btn = document.getElementById('btnLookup');
+
+  if (!taxid || taxid.length !== 8) {
+    setLookupStatus('error', '⚠ 請輸入完整8碼統一編號');
+    return;
+  }
+
+  btn.disabled = true;
+  setLookupStatus('loading', '⏳ 查詢中，請稍候...');
+
+  try {
+    const url = `https://company.g0v.ronny.tw/api/show/${taxid}`;
+    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+
+    if (!resp.ok) {
+      setLookupStatus('warn', `⚠ 查無此統編（${taxid}），請確認或手動填寫`);
+      btn.disabled = false;
+      return;
+    }
+
+    const json = await resp.json();
+    const d = json?.data;
+
+    if (!d) {
+      setLookupStatus('warn', '⚠ 查無此統編資料，請確認編號或手動填寫');
+      btn.disabled = false;
+      return;
+    }
+
+    // ── 帶入公司名稱（公司登記 or 商業登記皆可）
+    const name = d['公司名稱'] || d['商業名稱'] || d['名稱'] || '';
+    fillField('f_name', name);
+
+    // ── 帶入地址（公司地址 / 商業地址）
+    const addr = d['公司所在地'] || d['商業所在地'] || d['地址'] || '';
+    fillField('f_address', addr);
+
+    // ── 帶入營業項目（所營事業資料）
+    const bizRaw = d['所營事業資料'];
+    let bizItems = [];
+    if (Array.isArray(bizRaw)) {
+      bizItems = bizRaw.map(i => {
+        if (typeof i === 'string') return i;
+        return (i['業務代號'] ? i['業務代號'] + ' ' : '') + (i['業務名稱'] || i['項目名稱'] || '');
+      }).filter(Boolean);
+    } else if (typeof bizRaw === 'string') {
+      bizItems = bizRaw.split(/[，,、；;]/).map(s => s.trim()).filter(Boolean);
+    }
+    showBizItems(bizItems);
+
+    // ── 自動對應行業大類
+    autoSelectIndustry(bizItems);
+
+    // ── 公司狀態
+    const statusDesc = d['公司狀況'] || d['狀況'] || '';
+    const statusText = statusDesc ? `（${statusDesc}）` : '';
+    setLookupStatus('success', `✓ 查詢成功${statusText}：${name}`);
+
+  } catch (err) {
+    console.error('Lookup error:', err);
+    setLookupStatus('error', '⚠ 網路錯誤，請確認連線後重試，或手動填寫欄位');
+  }
+
+  btn.disabled = false;
+}
+
+function setLookupStatus(type, msg) {
+  const el = document.getElementById('lookupStatus');
+  if (!el) return;
+  el.className = `lookup-status ${type}`;
+  el.textContent = msg;
+}
+
+function fillField(id, value) {
+  const el = document.getElementById(id);
+  if (el && value) el.value = value;
+}
+
+function showBizItems(items) {
+  const box = document.getElementById('bizItemsBox');
+  const hidden = document.getElementById('f_biz_items_text');
+  if (!box) return;
+
+  const filtered = items.filter(i => i.trim().length > 0).slice(0, 30);
+  if (filtered.length === 0) {
+    box.classList.remove('show');
+    return;
+  }
+
+  box.classList.add('show');
+  box.innerHTML = filtered.map(i =>
+    `<span class="biz-item-tag">${i.trim()}</span>`
+  ).join('');
+
+  if (hidden) hidden.value = filtered.join('；');
+  formData['f_biz_items_text'] = filtered.join('；');
+}
+
+function autoSelectIndustry(bizItems) {
+  if (!bizItems || bizItems.length === 0) return;
+  // Try to match first item's prefix letter to major industry code
+  const firstCode = bizItems[0]?.trim();
+  if (!firstCode) return;
+  const prefix = firstCode.charAt(0).toUpperCase();
+  const majorEl = document.getElementById('f_ind_major');
+  if (majorEl && INDUSTRY_MAJOR.find(i => i.code === prefix)) {
+    majorEl.value = prefix;
+    updateMinor();
+  }
+}
+
+function updateMinor() {
+  const major = document.getElementById('f_ind_major').value;
+  const minor = document.getElementById('f_ind_minor');
+  const opts = INDUSTRY_MINOR[major] || [];
+  minor.innerHTML = opts.length
+    ? '<option value="">— 請選擇中類 —</option>' + opts.map(i => `<option value="${i.code}">${i.name}</option>`).join('')
+    : '<option value="">（此大類無細分中類，可直接填大類）</option>';
+}
+
+// ═══════════════════════════════════════════════
+//  STEP 2 – ENERGY
+// ═══════════════════════════════════════════════
+function renderEnergy() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+  <div class="section-card active">
+    <div class="section-header">
+      <div class="section-icon">⚡</div>
+      <div><div class="section-title">能源使用量</div><div class="section-desc">填寫年度用電、用水及燃料資訊</div></div>
+    </div>
+    <div class="section-body">
+      <div class="subsection">
+        <div class="subsection-header">用電 / 用水</div>
+        <div class="subsection-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>年度用電量（度/年）</label>
+              <input type="number" id="f_elec_vol" placeholder="例：120000" min="0">
+            </div>
+            <div class="form-group">
+              <label>年度用電金額（元/年）</label>
+              <input type="number" id="f_elec_cost" placeholder="例：360000" min="0">
+            </div>
+            <div class="form-group">
+              <label>年度用水量（度）</label>
+              <input type="number" id="f_water_vol" placeholder="例：5000" min="0">
+            </div>
+            <div class="form-group">
+              <label>年度用水金額（元）</label>
+              <input type="number" id="f_water_cost" placeholder="例：25000" min="0">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:14px"></div>
+
+      <div class="subsection">
+        <div class="subsection-header">使用燃料（最多2筆）</div>
+        <div class="subsection-body">
+          <div class="fuel-block">
+            <div class="fuel-block-label">▸ 燃料 第1筆</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>燃料種類 <span class="hint">（註3）</span></label>
+                <select id="f_fuel1_type">
+                  <option value="">— 請選擇 —</option>
+                  ${FUEL_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+                </select>
+              </div>
+              <div class="form-group">
+                <label>用量（公斤/公升/m³）</label>
+                <input type="number" id="f_fuel1_vol" placeholder="數量" min="0">
+              </div>
+              <div class="form-group">
+                <label>金額（元）</label>
+                <input type="number" id="f_fuel1_cost" placeholder="例：80000" min="0">
+              </div>
+            </div>
+          </div>
+          <div class="fuel-block">
+            <div class="fuel-block-label">▸ 燃料 第2筆</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>燃料種類 <span class="hint">（註3）</span></label>
+                <select id="f_fuel2_type">
+                  <option value="">— 請選擇 —</option>
+                  ${FUEL_TYPES.map(t => `<option value="${t}">${t}</option>`).join('')}
+                </select>
+              </div>
+              <div class="form-group">
+                <label>用量（公斤/公升/m³）</label>
+                <input type="number" id="f_fuel2_vol" placeholder="數量" min="0">
+              </div>
+              <div class="form-group">
+                <label>金額（元）</label>
+                <input type="number" id="f_fuel2_cost" placeholder="例：40000" min="0">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  STEP 3 – CONTACT
+// ═══════════════════════════════════════════════
+function renderContact() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = `
+  <div class="section-card active">
+    <div class="section-header">
+      <div class="section-icon">👤</div>
+      <div><div class="section-title">聯絡人資訊</div><div class="section-desc">受訪單位聯絡人 及 診斷顧問 資料</div></div>
+    </div>
+    <div class="section-body">
+      <div class="subsection">
+        <div class="subsection-header">受訪單位</div>
+        <div class="subsection-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>聯絡人姓名</label>
+              <input type="text" id="f_c_name" placeholder="姓名">
+            </div>
+            <div class="form-group">
+              <label>聯絡人信箱</label>
+              <input type="email" id="f_c_email" placeholder="email@example.com">
+            </div>
+            <div class="form-group">
+              <label>市內電話</label>
+              <input type="tel" id="f_c_tel" placeholder="例：07-1234567">
+            </div>
+            <div class="form-group">
+              <label>聯絡人手機</label>
+              <input type="tel" id="f_c_mobile" placeholder="例：0912-345678">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:14px"></div>
+
+      <div class="subsection">
+        <div class="subsection-header">診斷顧問</div>
+        <div class="subsection-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>顧問單位名稱</label>
+              <input type="text" id="f_d_org" placeholder="顧問機構名稱">
+            </div>
+            <div class="form-group">
+              <label>顧問姓名</label>
+              <input type="text" id="f_d_name" placeholder="姓名">
+            </div>
+            <div class="form-group">
+              <label>顧問信箱</label>
+              <input type="email" id="f_d_email" placeholder="email@example.com">
+            </div>
+            <div class="form-group">
+              <label>市內電話</label>
+              <input type="tel" id="f_d_tel" placeholder="例：07-1234567">
+            </div>
+            <div class="form-group">
+              <label>顧問手機</label>
+              <input type="tel" id="f_d_mobile" placeholder="例：0912-345678">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  STEP 4 – OPERATING HOURS
+// ═══════════════════════════════════════════════
+function renderHours() {
+  const main = document.getElementById('mainContent');
+  const rows = DAYS.map((day, i) => `
+    <div class="hours-row">
+      <div class="day-label">${day}</div>
+      <div class="hours-controls">
+        <div class="radio-group">
+          <label class="radio-pill">
+            <input type="radio" name="day${i}" value="open" checked onchange="toggleTimeRange(${i})"> 營業
+          </label>
+          <label class="radio-pill">
+            <input type="radio" name="day${i}" value="closed" onchange="toggleTimeRange(${i})"> 休息
+          </label>
+          <label class="radio-pill">
+            <input type="radio" name="day${i}" value="24h" onchange="toggleTimeRange(${i})"> 24小時
+          </label>
+        </div>
+        <div class="time-range" id="timeRange_${i}">
+          <input type="text" id="start_${i}" placeholder="08:00" maxlength="5" style="width:70px">
+          <span class="time-sep">—</span>
+          <input type="text" id="end_${i}" placeholder="18:00" maxlength="5" style="width:70px">
+        </div>
+      </div>
+    </div>`).join('');
+
+  main.innerHTML = `
+  <div class="section-card active">
+    <div class="section-header">
+      <div class="section-icon">🕐</div>
+      <div><div class="section-title">每週營業時間</div><div class="section-desc">請設定各日營業狀態與時段</div></div>
+    </div>
+    <div class="section-body">
+      <div class="hours-grid">${rows}</div>
+    </div>
+  </div>`;
+
+  restoreHours();
+}
+
+function toggleTimeRange(i) {
+  const val = document.querySelector(`input[name="day${i}"]:checked`)?.value;
+  const tr = document.getElementById(`timeRange_${i}`);
+  if (val === 'closed' || val === '24h') {
+    tr.style.display = 'none';
+  } else {
+    tr.style.display = 'flex';
+  }
+}
+
+function restoreHours() {
+  DAYS.forEach((_, i) => {
+    const saved = formData[`hours_${i}`];
+    if (saved) {
+      const radio = document.querySelector(`input[name="day${i}"][value="${saved.mode}"]`);
+      if (radio) { radio.checked = true; toggleTimeRange(i); }
+      if (saved.start) document.getElementById(`start_${i}`).value = saved.start;
+      if (saved.end)   document.getElementById(`end_${i}`).value   = saved.end;
+    } else {
+      toggleTimeRange(i); // default
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  STEP 5 – REVIEW
+// ═══════════════════════════════════════════════
+function renderReview() {
+  collectAll();
+  const fd = formData;
+  const hoursRows = DAYS.map((day, i) => {
+    const h = fd[`hours_${i}`] || {};
+    let val = '';
+    if (h.mode === 'closed') val = '休息';
+    else if (h.mode === '24h') val = '24小時';
+    else val = `${h.start || ''} — ${h.end || ''}`;
+    return `<tr><th>${day}營業時間</th><td>${val || '—'}</td></tr>`;
+  }).join('');
+
+  document.getElementById('mainContent').innerHTML = `
+  <div class="section-card active">
+    <div class="section-header">
+      <div class="section-icon">✅</div>
+      <div><div class="section-title">資料確認</div><div class="section-desc">請確認以下資料無誤後，點擊「匯出 Excel」</div></div>
+    </div>
+    <div class="section-body">
+      <table class="review-table">
+        <tr class="review-section-title"><td colspan="2">基本資料</td></tr>
+        <tr><th>用戶抬頭</th><td>${fd.f_name||'—'}</td></tr>
+        <tr><th>用戶統編</th><td>${fd.f_taxid||'—'}</td></tr>
+        <tr><th>登記營業項目</th><td style="font-size:0.75rem;line-height:1.8">${fd.f_biz_items_text ? fd.f_biz_items_text.split('；').map(i=>`<span style="display:inline-block;background:#eef2f7;border-radius:3px;padding:1px 6px;margin:2px 3px 2px 0;font-size:0.7rem">${i}</span>`).join('') : '—'}</td></tr>
+        <tr><th>行業別大類</th><td>${fd.f_ind_major_text||'—'}</td></tr>
+        <tr><th>行業別中類</th><td>${fd.f_ind_minor_text||'—'}</td></tr>
+        <tr><th>建築物地址</th><td>${fd.f_address||'—'}</td></tr>
+        <tr><th>建築物用途</th><td>${fd.f_building_use||'—'}</td></tr>
+        <tr><th>樓地板面積(m²)</th><td>${fd.f_floor_area||'—'}</td></tr>
+        <tr><th>年營運時數(小時)</th><td>${fd.f_op_hours||'—'}</td></tr>
+
+        <tr class="review-section-title"><td colspan="2">能源用量</td></tr>
+        <tr><th>年度用電量(度/年)</th><td>${fd.f_elec_vol||'—'}</td></tr>
+        <tr><th>年度用電金額(元/年)</th><td>${fd.f_elec_cost||'—'}</td></tr>
+        <tr><th>年度用水量(度)</th><td>${fd.f_water_vol||'—'}</td></tr>
+        <tr><th>年度用水金額(元)</th><td>${fd.f_water_cost||'—'}</td></tr>
+        <tr><th>燃料1-種類</th><td>${fd.f_fuel1_type||'—'}</td></tr>
+        <tr><th>燃料1-用量</th><td>${fd.f_fuel1_vol||'—'}</td></tr>
+        <tr><th>燃料1-金額(元)</th><td>${fd.f_fuel1_cost||'—'}</td></tr>
+        <tr><th>燃料2-種類</th><td>${fd.f_fuel2_type||'—'}</td></tr>
+        <tr><th>燃料2-用量</th><td>${fd.f_fuel2_vol||'—'}</td></tr>
+        <tr><th>燃料2-金額(元)</th><td>${fd.f_fuel2_cost||'—'}</td></tr>
+
+        <tr class="review-section-title"><td colspan="2">受訪單位聯絡人</td></tr>
+        <tr><th>聯絡人姓名</th><td>${fd.f_c_name||'—'}</td></tr>
+        <tr><th>聯絡人信箱</th><td>${fd.f_c_email||'—'}</td></tr>
+        <tr><th>市內電話</th><td>${fd.f_c_tel||'—'}</td></tr>
+        <tr><th>聯絡人手機</th><td>${fd.f_c_mobile||'—'}</td></tr>
+
+        <tr class="review-section-title"><td colspan="2">診斷顧問</td></tr>
+        <tr><th>顧問單位名稱</th><td>${fd.f_d_org||'—'}</td></tr>
+        <tr><th>顧問姓名</th><td>${fd.f_d_name||'—'}</td></tr>
+        <tr><th>顧問信箱</th><td>${fd.f_d_email||'—'}</td></tr>
+        <tr><th>市內電話</th><td>${fd.f_d_tel||'—'}</td></tr>
+        <tr><th>顧問手機</th><td>${fd.f_d_mobile||'—'}</td></tr>
+
+        <tr class="review-section-title"><td colspan="2">每週營業時間</td></tr>
+        ${hoursRows}
+      </table>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  COLLECT & RESTORE
+// ═══════════════════════════════════════════════
+const TEXT_FIELDS = [
+  'f_name','f_taxid','f_address','f_floor_area','f_op_hours',
+  'f_biz_items_text',
+  'f_elec_vol','f_elec_cost','f_water_vol','f_water_cost',
+  'f_fuel1_vol','f_fuel1_cost','f_fuel2_vol','f_fuel2_cost',
+  'f_c_name','f_c_email','f_c_tel','f_c_mobile',
+  'f_d_org','f_d_name','f_d_email','f_d_tel','f_d_mobile',
+];
+const SELECT_FIELDS = ['f_ind_major','f_ind_minor','f_building_use','f_fuel1_type','f_fuel2_type'];
+
+function collectAll() {
+  TEXT_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) formData[id] = el.value;
+  });
+  SELECT_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      formData[id] = el.value;
+      formData[id + '_text'] = el.options[el.selectedIndex]?.text || '';
+    }
+  });
+  // hours
+  DAYS.forEach((_, i) => {
+    const radio = document.querySelector(`input[name="day${i}"]:checked`);
+    if (radio) {
+      formData[`hours_${i}`] = {
+        mode: radio.value,
+        start: document.getElementById(`start_${i}`)?.value || '',
+        end: document.getElementById(`end_${i}`)?.value || '',
+      };
+    }
+  });
+}
+
+function restoreValues() {
+  TEXT_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && formData[id] !== undefined) el.value = formData[id];
+  });
+  // Restore biz items tags display
+  if (formData['f_biz_items_text']) {
+    const items = formData['f_biz_items_text'].split('；').filter(Boolean);
+    showBizItems(items);
+  }
+  SELECT_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && formData[id] !== undefined) {
+      el.value = formData[id];
+      if (id === 'f_ind_major') updateMinor();
+      setTimeout(() => {
+        const minorEl = document.getElementById('f_ind_minor');
+        if (minorEl && formData['f_ind_minor']) minorEl.value = formData['f_ind_minor'];
+      }, 50);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+function goToStep(n) {
+  if (n > currentStep) { if (!validateStep()) return; }
+  collectAll();
+  currentStep = n;
+  renderAll();
+  window.scrollTo(0, 0);
+}
+
+function nextStep() {
+  if (!validateStep()) return;
+  collectAll();
+  if (currentStep < STEPS.length - 1) {
+    currentStep++;
+    renderAll();
+    window.scrollTo(0, 0);
+  }
+}
+
+function prevStep() {
+  collectAll();
+  if (currentStep > 0) {
+    currentStep--;
+    renderAll();
+    window.scrollTo(0, 0);
+  }
+}
+
+function validateStep() {
+  const stepId = STEPS[currentStep].id;
+  if (stepId === 'basic') {
+    const name = document.getElementById('f_name')?.value.trim();
+    const taxid = document.getElementById('f_taxid')?.value.trim();
+    const addr = document.getElementById('f_address')?.value.trim();
+    if (!name) { highlightError('f_name', '請輸入廠商名稱'); return false; }
+    if (!taxid) { highlightError('f_taxid', '請輸入統一編號'); return false; }
+    if (!addr) { highlightError('f_address', '請輸入建築物地址'); return false; }
+  }
+  return true;
+}
+
+function highlightError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.add('error');
+    el.focus();
+    el.addEventListener('input', () => el.classList.remove('error'), { once: true });
+  }
+  showToast('⚠ ' + msg, '#c0392b');
+}
+
+// ═══════════════════════════════════════════════
+//  EXPORT EXCEL
+// ═══════════════════════════════════════════════
+function exportExcel() {
+  collectAll();
+  const fd = formData;
+
+  const getHours = (i) => {
+    const h = fd[`hours_${i}`] || {};
+    if (h.mode === 'closed') return '休息';
+    if (h.mode === '24h') return '24小時';
+    const s = h.start || '', e = h.end || '';
+    return (s || e) ? `${s}~${e}` : '';
+  };
+
+  // Build rows matching original format: [項目, , 內容]
+  const rows = [
+    ['項目', '', '內容'],
+    ['用戶抬頭', '', fd.f_name || ''],
+    ['用戶統編', '', fd.f_taxid || ''],
+    ['登記營業項目', '', fd.f_biz_items_text || ''],
+    ['行業別大類代碼-名稱（註1）', '', fd.f_ind_major_text && fd.f_ind_major_text !== '— 請選擇大類 —' ? fd.f_ind_major_text : fd.f_ind_major || ''],
+    ['行業別中類代碼-名稱（註1）', '', fd.f_ind_minor_text && !fd.f_ind_minor_text.startsWith('（') ? fd.f_ind_minor_text : fd.f_ind_minor || ''],
+    ['建築物地址', '', fd.f_address || ''],
+    ['建築物用途（註2）', '', fd.f_building_use || ''],
+    ['樓地板面積(m2)', '', fd.f_floor_area || ''],
+    ['年營運時數(小時)', '', fd.f_op_hours || ''],
+    ['年度用電量(度/年)', '', fd.f_elec_vol || ''],
+    ['年度用電金額(元/年)', '', fd.f_elec_cost || ''],
+    ['年度用水量(度)', '', fd.f_water_vol || ''],
+    ['年度用水金額(元)', '', fd.f_water_cost || ''],
+    ['使用燃料種類（註3）', '', fd.f_fuel1_type || ''],
+    ['使用燃料用量(公斤/公升/m3)', '', fd.f_fuel1_vol || ''],
+    ['使用燃料金額(元)', '', fd.f_fuel1_cost || ''],
+    ['使用燃料種類（註3）', '', fd.f_fuel2_type || ''],
+    ['使用燃料用量(公斤/公升/m3)', '', fd.f_fuel2_vol || ''],
+    ['使用燃料金額(元)', '', fd.f_fuel2_cost || ''],
+    ['受訪單位', '聯絡人姓名', fd.f_c_name || ''],
+    ['', '聯絡人信箱', fd.f_c_email || ''],
+    ['', '市內電話', fd.f_c_tel || ''],
+    ['', '聯絡人手機', fd.f_c_mobile || ''],
+    ['診斷顧問', '單位名稱', fd.f_d_org || ''],
+    ['', '顧問姓名', fd.f_d_name || ''],
+    ['', '顧問信箱', fd.f_d_email || ''],
+    ['', '市內電話', fd.f_d_tel || ''],
+    ['', '顧問手機', fd.f_d_mobile || ''],
+    ['週一營業時間（註4）', '', getHours(0)],
+    ['週二營業時間（註4）', '', getHours(1)],
+    ['週三營業時間（註4）', '', getHours(2)],
+    ['週四營業時間（註4）', '', getHours(3)],
+    ['週五營業時間（註4）', '', getHours(4)],
+    ['週六營業時間（註4）', '', getHours(5)],
+    ['週日營業時間（註4）', '', getHours(6)],
+  ];
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // Column widths
+  ws['!cols'] = [{ wch: 28 }, { wch: 14 }, { wch: 40 }];
+
+  // Merge cells for rows with combined fields (受訪單位, 診斷顧問)
+  ws['!merges'] = [
+    { s: { r: 20, c: 0 }, e: { r: 23, c: 0 } }, // 受訪單位
+    { s: { r: 24, c: 0 }, e: { r: 28, c: 0 } }, // 診斷顧問
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, '廠商基本資料');
+
+  const filename = `${(fd.f_name || '未命名廠商').replace(/[\/\\:*?"<>|]/g, '_')}_基本資料調查表.xlsx`;
+  XLSX.writeFile(wb, filename);
+  showToast('✓ Excel 已下載：' + filename);
+}
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+function showToast(msg, bg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = bg || '#2d7a4f';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════════════
+//  ★ 設定區 — 部署後請填入您的 Apps Script 網址 ★
+// ═══════════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzcBydxnO3WKvTZrmWbuIGwRjdLZnGlCZKxlT-WH-SLVZ__C1JYN-e5bbWrN5J9DL2N/exec';
+// 取得方式：Google Sheets → 擴充功能 → Apps Script → 部署 → 複製網址
+// 格式範例：https://script.google.com/macros/s/AKfycbx.../exec
+
+// ═══════════════════════════════════════════════
+//  SUBMIT TO GOOGLE SHEETS
+// ═══════════════════════════════════════════════
+async function submitToSheets() {
+  if (GAS_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    showToast('⚠ 請先設定 Google Sheets 連結（見部署說明）', '#c0392b');
+    return;
+  }
+
+  collectAll();
+  const fd = formData;
+
+  const getHours = (i) => {
+    const h = fd[`hours_${i}`] || {};
+    if (h.mode === 'closed') return '休息';
+    if (h.mode === '24h') return '24小時';
+    const s = h.start || '', e = h.end || '';
+    return (s || e) ? `${s}~${e}` : '';
+  };
+
+  if (!fd.f_name || !fd.f_taxid) {
+    showToast('⚠ 請先填寫廠商名稱與統一編號', '#c0392b');
+    return;
+  }
+
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.textContent = '⏳ 送出中...';
+
+  const payload = {
+    送出時間: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+    用戶抬頭: fd.f_name || '',
+    用戶統編: fd.f_taxid || '',
+    登記營業項目: fd.f_biz_items_text || '',
+    行業別大類: fd.f_ind_major_text || fd.f_ind_major || '',
+    行業別中類: fd.f_ind_minor_text || fd.f_ind_minor || '',
+    建築物地址: fd.f_address || '',
+    建築物用途: fd.f_building_use || '',
+    樓地板面積m2: fd.f_floor_area || '',
+    年營運時數: fd.f_op_hours || '',
+    年度用電量: fd.f_elec_vol || '',
+    年度用電金額: fd.f_elec_cost || '',
+    年度用水量: fd.f_water_vol || '',
+    年度用水金額: fd.f_water_cost || '',
+    燃料1種類: fd.f_fuel1_type || '',
+    燃料1用量: fd.f_fuel1_vol || '',
+    燃料1金額: fd.f_fuel1_cost || '',
+    燃料2種類: fd.f_fuel2_type || '',
+    燃料2用量: fd.f_fuel2_vol || '',
+    燃料2金額: fd.f_fuel2_cost || '',
+    聯絡人姓名: fd.f_c_name || '',
+    聯絡人信箱: fd.f_c_email || '',
+    聯絡人市話: fd.f_c_tel || '',
+    聯絡人手機: fd.f_c_mobile || '',
+    顧問單位: fd.f_d_org || '',
+    顧問姓名: fd.f_d_name || '',
+    顧問信箱: fd.f_d_email || '',
+    顧問市話: fd.f_d_tel || '',
+    顧問手機: fd.f_d_mobile || '',
+    週一: getHours(0), 週二: getHours(1), 週三: getHours(2),
+    週四: getHours(3), 週五: getHours(4), 週六: getHours(5), 週日: getHours(6),
+  };
+
+  try {
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    // no-cors 模式下無法讀取 response，只要不 throw 就視為成功
+    showToast(`✓ 已送出集中：${fd.f_name}`, '#1a6e3c');
+    // 同時下載 Excel 備份
+    exportExcel();
+  } catch (err) {
+    console.error(err);
+    showToast('⚠ 送出失敗，請確認網路或改用匯出Excel', '#c0392b');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '☁ 送出集中';
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+renderAll();
+</script>
+</body>
+</html>
